@@ -88,21 +88,30 @@ unsigned int CFileAndroidApp::ReadIcon(unsigned char** lpBuf, unsigned int* widt
 {
   JNIEnv* env = xbmc_jnienv();
   void *bitmapBuf = NULL;
+  int densities[] = { CJNIDisplayMetrics::DENSITY_XXXHIGH, CJNIDisplayMetrics::DENSITY_XXHIGH, CJNIDisplayMetrics::DENSITY_XHIGH, -1 };
 
   CJNIBitmapDrawable bmp;
   if (CJNIBuild::SDK_INT >= 15 && m_icon)
   {
-    int density = CJNIDisplayMetrics::DENSITY_XHIGH;
-    if (CJNIBuild::SDK_INT >= 18)
-      density = CJNIDisplayMetrics::DENSITY_XXXHIGH;
-    else if (CJNIBuild::SDK_INT >= 16)
-      density = CJNIDisplayMetrics::DENSITY_XXHIGH;
     CJNIResources res = CJNIContext::GetPackageManager().getResourcesForApplication(m_packageName);
     if (res)
-      bmp = res.getDrawableForDensity(m_icon, density);
+    {
+      for (int i=0; densities[i] != -1 && !bmp; ++i)
+      {
+        int density = densities[i];
+        CJNIBitmapDrawable resbmp = res.getDrawableForDensity(m_icon, density);
+        if (xbmc_jnienv()->ExceptionCheck())
+          xbmc_jnienv()->ExceptionClear();
+        else
+          bmp = resbmp;
+      }
+    }
   }
-  else
+
+  if (!bmp)
     bmp = (CJNIBitmapDrawable)CJNIContext::GetPackageManager().getApplicationIcon(m_packageName);
+  if (!bmp)
+    return 0;
 
   CJNIBitmap bitmap(bmp.getBitmap());
   AndroidBitmapInfo info;
