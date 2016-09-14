@@ -362,7 +362,7 @@ bool CDVDVideoCodecAndroidMediaCodec::Open(CDVDStreamInfo &hints, CDVDCodecOptio
     return false;
   }
 
-  if (CJNIBuild::DEVICE == "foster" && hints.stereo_mode != "mono")   // SATV buggy with HTAB/HSBS
+  if (CJNIBuild::DEVICE == "foster" && (!hints.stereo_mode.empty() && hints.stereo_mode != "mono"))   // SATV buggy with HTAB/HSBS
   {
     CLog::Log(LOGERROR, "CDVDVideoCodecAndroidMediaCodec::Open - SATV does not support stereo mode (%s)", hints.stereo_mode.c_str());
     return false;
