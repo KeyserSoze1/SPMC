@@ -90,7 +90,7 @@ unsigned int CFileAndroidApp::ReadIcon(unsigned char** lpBuf, unsigned int* widt
   void *bitmapBuf = NULL;
   int densities[] = { CJNIDisplayMetrics::DENSITY_XXXHIGH, CJNIDisplayMetrics::DENSITY_XXHIGH, CJNIDisplayMetrics::DENSITY_XHIGH, -1 };
 
-  CJNIBitmapDrawable bmp;
+  CJNIBitmap bmp;
   if (CJNIBuild::SDK_INT >= 15 && m_icon)
   {
     CJNIResources res = CJNIContext::GetPackageManager().getResourcesForApplication(m_packageName);
@@ -103,19 +103,19 @@ unsigned int CFileAndroidApp::ReadIcon(unsigned char** lpBuf, unsigned int* widt
         if (xbmc_jnienv()->ExceptionCheck())
           xbmc_jnienv()->ExceptionClear();
         else
-          bmp = resbmp;
+          if (resbmp.getBitmap())
+            bmp = resbmp.getBitmap();
       }
     }
   }
 
   if (!bmp)
-    bmp = (CJNIBitmapDrawable)CJNIContext::GetPackageManager().getApplicationIcon(m_packageName);
+    bmp = ((CJNIBitmapDrawable)(CJNIContext::GetPackageManager().getApplicationIcon(m_packageName))).getBitmap();
   if (!bmp)
     return 0;
 
-  CJNIBitmap bitmap(bmp.getBitmap());
   AndroidBitmapInfo info;
-  AndroidBitmap_getInfo(env, bitmap.get_raw(), &info);
+  AndroidBitmap_getInfo(env, bmp.get_raw(), &info);
   if (!info.width || !info.height)
     return 0;
 
@@ -125,11 +125,11 @@ unsigned int CFileAndroidApp::ReadIcon(unsigned char** lpBuf, unsigned int* widt
   int imgsize = *width * *height * 4;
   *lpBuf = new unsigned char[imgsize];
 
-  AndroidBitmap_lockPixels(env, bitmap.get_raw(), &bitmapBuf);
+  AndroidBitmap_lockPixels(env, bmp.get_raw(), &bitmapBuf);
   if (bitmapBuf)
   {
     memcpy(*lpBuf, bitmapBuf, imgsize);
-    AndroidBitmap_unlockPixels(env, bitmap.get_raw());
+    AndroidBitmap_unlockPixels(env, bmp.get_raw());
     return imgsize;
   }
   return 0;
